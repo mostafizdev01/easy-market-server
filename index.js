@@ -27,6 +27,7 @@ async function run() {
 
     const db = client.db("solo-db");
     const jobCollection = db.collection("jobs");
+    const bidCollection = db.collection("bids");
 
     // post the job from the database 
 
@@ -51,7 +52,13 @@ async function run() {
       res.send(result);
     })
 
-    
+    /// post the bid-job data from the database
+
+    app.post("/bid-job", async(req, res) => {
+      const bidJob = req.body;
+      const result = await bidCollection.insertOne(bidJob);
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
