@@ -1,6 +1,6 @@
 const express = require('express')
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb')
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 require('dotenv').config()
 
 const port = process.env.PORT || 9000
@@ -42,6 +42,16 @@ async function run() {
       const allJobs = await jobCollection.find().toArray();
       res.send(allJobs);
     })
+
+    /// get the single job from the database
+
+    app.get("/jobs/:jobId", async (req, res) =>{
+      const jobId = req.params.jobId;
+      const result = await jobCollection.findOne({ _id: new ObjectId(jobId) });
+      res.send(result);
+    })
+
+    
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
