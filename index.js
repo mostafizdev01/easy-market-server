@@ -59,6 +59,13 @@ async function run() {
       const result = await jobCollection.find({ 'employeInfo.email': email }).toArray();
       res.send(result);
     })
+    // delete the my post data from the database ***************************
+
+    app.delete("/delete-post/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await jobCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    })
 
     /// post the bid-job data from the database
 
