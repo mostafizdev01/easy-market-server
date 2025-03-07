@@ -46,27 +46,35 @@ async function run() {
 
     /// get the single job from the database
 
-    app.get("/jobs/:jobId", async (req, res) =>{
+    app.get("/jobs/:jobId", async (req, res) => {
       const jobId = req.params.jobId;
       const result = await jobCollection.findOne({ _id: new ObjectId(jobId) });
       res.send(result);
     })
 
+    // get the my bid data from the database ***************************
+
+    app.get("/my-post", async (req, res) => {
+      const email = req.query.email;
+      const result = await jobCollection.find({ 'employeInfo.email': email }).toArray();
+      res.send(result);
+    })
+
     /// post the bid-job data from the database
 
-    app.post("/bid-job", async(req, res) => {
+    app.post("/bid-job", async (req, res) => {
       const bidJob = req.body;
       const result = await bidCollection.insertOne(bidJob);
       res.send(result);
     })
 
-       // my posted bid data get the database ***************************
+    // get the my bid data from the database ***************************
 
-       app.get("/my-post", async (req, res) => {
-        const email = req.query.email;
-        const result = await bidCollection.find({ email: email }).toArray();
-        res.send(result);
-      })
+    app.get("/my-bids", async (req, res) => {
+      const email = req.query.email;
+      const result = await bidCollection.find({ email: email }).toArray();
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
