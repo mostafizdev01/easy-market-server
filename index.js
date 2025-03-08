@@ -49,6 +49,15 @@ async function run() {
     app.get("/jobs/:jobId", async (req, res) => {
       const jobId = req.params.jobId;
       const result = await jobCollection.findOne({ _id: new ObjectId(jobId) });
+      console.log(result);
+      res.send(result);
+    })
+
+    // /// Update the post job from the database
+
+    app.get("/update-jobs/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await jobCollection.findOne({ _id: new ObjectId(id) });
       res.send(result);
     })
 
@@ -64,6 +73,26 @@ async function run() {
     app.delete("/delete-post/:id", async (req, res) => {
       const id = req.params.id;
       const result = await jobCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    })
+    // delete the my post data from the database ***************************
+
+    app.put("/update-post/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatePost = req.body;
+      const updatedDoc = {
+        $set: {
+         job_title: updatePost.job_title,
+         deadline: updatePost.deadline,
+         category: updatePost.category,
+         minPrice: updatePost.minPrice,
+         maxPrice: updatePost.maxPrice,
+         job_description: updatePost.job_description,
+        },
+      }
+      const result = await jobCollection.updateOne(filter, updatedDoc, options);
       res.send(result);
     })
 
