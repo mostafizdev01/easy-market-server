@@ -151,6 +151,24 @@ async function run() {
       res.send(result);
     })
 
+    /// get the all job from the database 
+
+    app.get("/all-jobs", async (req, res)=>{
+      const filter = req.query.filter;
+      const search = req.query.search;
+      let query = {
+        job_title: {  /// search korle job title er match kore data debe and fontend e show korbe.
+          $regex: search,  // reagex keyword er mardhome database theke search kore data niye ashbe.
+          $options: 'i',  /// case sensetive --------->> search er jaigai boro hat er or soto har er dile o lekha match korlei ta debe.
+        }
+      };
+      if(filter){
+        query.category = filter  // category property er mordhe filter name data show korabe.
+      }
+      const allJobs = await jobCollection.find().toArray();
+      res.send(allJobs);
+    })
+
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
     console.log(
