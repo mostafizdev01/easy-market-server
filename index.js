@@ -127,7 +127,6 @@ async function run() {
     app.get("/my-bids/:email", async (req, res) => {
       const email = req.params.email;  // ja must lage and must pathabe and must pathabe tai holo params;
       const buyer = req.query.buyer;  // ja optional pathaite o pare na o pathaite o pare tai bolo query;
-      console.log(buyer);
       
       const query = {};  /// ekhane query name ekta empty object rakha hoise. jar mordhe amra conditionality data rakhbo.
       if(buyer){ // buyer jodi thake tar mane query te click korbe. and database er mordhe buyer name property er mordhe query theke j email astese seita rekhe dibe then bidCollection data er mordhe query te j email ase sei email er sata match kore data send korbe.
@@ -139,6 +138,18 @@ async function run() {
       res.send(result);
     })
 
+    // update the bid status from the database ----------
+
+    app.patch('/bid-status-update/:id', async (req, res)=>{
+      const id = req.params.id;
+      const {status} = req.body;
+      const filter = { _id: new ObjectId(id)}
+      const updateStatus = { 
+        $set: { status },
+      }
+      const result = await bidCollection.updateOne(filter, updateStatus);
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
