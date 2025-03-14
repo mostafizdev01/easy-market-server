@@ -49,7 +49,7 @@ async function run() {
     app.get("/jobs/:jobId", async (req, res) => {
       const jobId = req.params.jobId;
       const result = await jobCollection.findOne({ _id: new ObjectId(jobId) });
-      console.log(result);
+      // console.log(result);
       res.send(result);
     })
 
@@ -84,12 +84,12 @@ async function run() {
       const updatePost = req.body;
       const updatedDoc = {
         $set: {
-         job_title: updatePost.job_title,
-         deadline: updatePost.deadline,
-         category: updatePost.category,
-         minPrice: updatePost.minPrice,
-         maxPrice: updatePost.maxPrice,
-         job_description: updatePost.job_description,
+          job_title: updatePost.job_title,
+          deadline: updatePost.deadline,
+          category: updatePost.category,
+          minPrice: updatePost.minPrice,
+          maxPrice: updatePost.maxPrice,
+          job_description: updatePost.job_description,
         },
       }
       const result = await jobCollection.updateOne(filter, updatedDoc, options);
@@ -100,17 +100,45 @@ async function run() {
 
     app.post("/bid-job", async (req, res) => {
       const bidJob = req.body;
+      console.log(bidJob);
+
+      /// if a user placed a bid already in this job 
+      const query = { email: bidJob.email, jobId: bidJob.jobId }
+      const bidExists = await bidCollection.findOne(query);
+      console.log(bidExists, "tumi age ekbar bid korso ek kaj koibar korte chau tumi");
+
+      if (bidExists) {
+        return res.status(401).send({ message: 'A bid already exists for this job and user' });
+      }
+
       const result = await bidCollection.insertOne(bidJob);
       res.send(result);
+
+      /// update the bid-job count data from the database
+
+      const bidCountFilter = { _id: new ObjectId(bidJob.jobId) };
+      const bidCountUpdate = { $inc: { bids: 1 } };
+      await jobCollection.updateOne(bidCountFilter, bidCountUpdate);
+
     })
 
     // get the my bid data from the database ***************************
 
-    app.get("/my-bids", async (req, res) => {
-      const email = req.query.email;
-      const result = await bidCollection.find({ email: email }).toArray();
+    app.get("/my-bids/:email", async (req, res) => {
+      const email = req.params.email;  // ja must lage and must pathabe and must pathabe tai holo params;
+      const buyer = req.query.buyer;  // ja optional pathaite o pare na o pathaite o pare tai bolo query;
+      console.log(buyer);
+      
+      const query = {};  /// ekhane query name ekta empty object rakha hoise. jar mordhe amra conditionality data rakhbo.
+      if(buyer){ // buyer jodi thake tar mane query te click korbe. and database er mordhe buyer name property er mordhe query theke j email astese seita rekhe dibe then bidCollection data er mordhe query te j email ase sei email er sata match kore data send korbe.
+        query.buyer = email  // ekhane buyer holo property and email holo tar value;
+      }else{
+        query.email = email   // ekhane email holo property and email holo tar value;
+      }  /// ami ekhar buyer property er mordhe email value deye khuje j gula pabo sei gula nibo. and abar email property er mordhe email wala value j gual pabo sei gula nibo.
+      const result = await bidCollection.find(query).toArray();
       res.send(result);
     })
+
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
