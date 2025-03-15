@@ -29,8 +29,9 @@ async function run() {
     const jobCollection = db.collection("jobs");
     const bidCollection = db.collection("bids");
 
-    // post the job from the database 
+    // generate jwt token 
 
+    // post the job from the database 
     app.post("/add-job", async (req, res) => {
       const newJob = req.body;
       const result = await jobCollection.insertOne(newJob);
@@ -156,6 +157,9 @@ async function run() {
     app.get("/all-jobs", async (req, res)=>{
       const filter = req.query.filter;
       const search = req.query.search;
+      const sort = req.query.sort;
+      let options = {}
+      if(sort) options = { sort: { deadline: sort === 'asc' ? 1 : -1 }}
       let query = {
         job_title: {  /// search korle job title er match kore data debe and fontend e show korbe.
           $regex: search,  // reagex keyword er mardhome database theke search kore data niye ashbe.
@@ -165,7 +169,7 @@ async function run() {
       if(filter){
         query.category = filter  // category property er mordhe filter name data show korabe.
       }
-      const allJobs = await jobCollection.find().toArray();
+      const allJobs = await jobCollection.find(query, options).toArray();
       res.send(allJobs);
     })
 
