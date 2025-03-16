@@ -2,11 +2,18 @@ const express = require('express')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 require('dotenv').config()
+const jwt = require('jsonwebtoken')
 
 const port = process.env.PORT || 9000
 const app = express()
 
-app.use(cors())
+const serverPermissionsData = {
+  origin: ['http://localhost:5173'],
+  credentials: true,
+  optionalSuccessStatus: 200
+}
+
+app.use(cors(serverPermissionsData))
 app.use(express.json())
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.eywn0.mongodb.net/?retryWrites=true&w=majority&appName=Main`
@@ -30,6 +37,25 @@ async function run() {
     const bidCollection = db.collection("bids");
 
     // generate jwt token 
+    app.post('/jwt', async (req, res) => {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.JWT_SECRET, { expiresIn: '180d' });
+      res.cookie("jwt-token", token, { // jwt token save the browser cookies
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+      }).send({success: true})
+    })
+
+    // logOut || clearCookies form the browser 
+
+    app.post('/logout', (req, res) => {
+      res.clearCookie("jwt-token", {
+        maxAge: 0,  /// maxage na dile browser theke cookie clear korbe na.
+        secure: true,
+        sameSite: 'none',
+      }).send({ success: true })
+    })
 
     // post the job from the database 
     app.post("/add-job", async (req, res) => {
@@ -160,12 +186,11 @@ async function run() {
       const sort = req.query.sort;
       let options = {}
       if(sort) options = { sort: { deadline: sort === 'asc' ? 1 : -1 }}
-      let query = {
-        job_title: {  /// search korle job title er match kore data debe and fontend e show korbe.
+      let query = {}
+        query.job_title = {  /// search korle job title er match kore data debe and fontend e show korbe.
           $regex: search,  // reagex keyword er mardhome database theke search kore data niye ashbe.
           $options: 'i',  /// case sensetive --------->> search er jaigai boro hat er or soto har er dile o lekha match korlei ta debe.
         }
-      };
       if(filter){
         query.category = filter  // category property er mordhe filter name data show korabe.
       }
