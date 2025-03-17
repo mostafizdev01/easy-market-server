@@ -3,9 +3,11 @@ const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser');
 
 const port = process.env.PORT || 9000
 const app = express()
+app.use(cookieParser());
 
 const serverPermissionsData = {
   origin: ['http://localhost:5173'],
@@ -15,6 +17,7 @@ const serverPermissionsData = {
 
 app.use(cors(serverPermissionsData))
 app.use(express.json())
+app.use(cookieParser())  // cookie theke token er value ta niye ashbe 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.eywn0.mongodb.net/?retryWrites=true&w=majority&appName=Main`
 
@@ -26,6 +29,18 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 })
+
+//// verify the token 
+
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.token;
+  if(!token) return res.status(401).send({ message: 'unauthorized access' });
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).send({ message: 'invalid token' });
+    req.user = decoded;  /// user name ekta property creata kora holo and tar value hishabe devoded set kora holo ----------->> decoded er mordhe user er email and other information gula ase
+  });
+  next()
+}
 
 async function run() {
   try {
@@ -40,7 +55,7 @@ async function run() {
     app.post('/jwt', async (req, res) => {
       const email = req.body;
       const token = jwt.sign(email, process.env.JWT_SECRET, { expiresIn: '180d' });
-      res.cookie("jwt-token", token, { // jwt token save the browser cookies
+      res.cookie("token", token, { // jwt token save the browser cookies
         httpOnly: true,
         secure: true,
         sameSite: 'none',
@@ -49,11 +64,11 @@ async function run() {
 
     // logOut || clearCookies form the browser 
 
-    app.post('/logout', (req, res) => {
-      res.clearCookie("jwt-token", {
+    app.get('/logout', async(req, res) => {
+      res.clearCookie("token", {
         maxAge: 0,  /// maxage na dile browser theke cookie clear korbe na.
-        secure: true,
-        sameSite: 'none',
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? 'none' : 'strict',
       }).send({ success: true })
     })
 
@@ -151,9 +166,15 @@ async function run() {
 
     // get the my bid data from the database ***************************
 
-    app.get("/my-bids/:email", async (req, res) => {
+    app.get("/my-bids/:email", verifyToken, async (req, res) => {
+      const tokenEmail = req.user?.email
       const email = req.params.email;  // ja must lage and must pathabe and must pathabe tai holo params;
       const buyer = req.query.buyer;  // ja optional pathaite o pare na o pathaite o pare tai bolo query;
+      console.log("my params email: " + email);
+      console.log("my token email: " + tokenEmail);
+      if(tokenEmail !== email){
+        return res.status(401).send({ message: 'Unauthorized access' });  
+      }
       
       const query = {};  /// ekhane query name ekta empty object rakha hoise. jar mordhe amra conditionality data rakhbo.
       if(buyer){ // buyer jodi thake tar mane query te click korbe. and database er mordhe buyer name property er mordhe query theke j email astese seita rekhe dibe then bidCollection data er mordhe query te j email ase sei email er sata match kore data send korbe.
