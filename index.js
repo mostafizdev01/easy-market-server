@@ -167,12 +167,10 @@ async function run() {
     // get the my bid data from the database ***************************
 
     app.get("/my-bids/:email", verifyToken, async (req, res) => {
-      const tokenEmail = req.user?.email
+      const tokenEmail = req.user?.email  /// amra jei khane verifytoken ta user korbo sei request er mordhe verifytoken er inofrmation gula pabo.
       const email = req.params.email;  // ja must lage and must pathabe and must pathabe tai holo params;
       const buyer = req.query.buyer;  // ja optional pathaite o pare na o pathaite o pare tai bolo query;
-      console.log("my params email: " + email);
-      console.log("my token email: " + tokenEmail);
-      if(tokenEmail !== email){
+      if(tokenEmail !== email){  /// amder fontend theke pathobo email and verify theke anya email match kortesi.
         return res.status(401).send({ message: 'Unauthorized access' });  
       }
       
